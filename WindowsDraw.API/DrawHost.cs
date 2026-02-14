@@ -1,4 +1,11 @@
-﻿using System;
+﻿/**
+ MIT License
+ Copyright (c) 2026 ValencyProject Team - Higashitani Yume
+
+你可以自由地使用、复制、修改、合并、发布、分发、再授权和/或销售本软件的副本，但是你必须
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Drawing.Drawing2D;
