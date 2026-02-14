@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="WindowsDraw.API/WindowsDraw.API.csproj" Id="f730853d-4a74-4859-a509-2851c5ee3a75" />
+  <Project Path="WindowsDraw.Test/WindowsDraw.Test.csproj" Id="1a658a9c-ba1c-4bf5-ab58-6f99bd674b6a" />
+</Solution>
