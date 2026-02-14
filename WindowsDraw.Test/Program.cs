@@ -1,19 +1,26 @@
 ﻿using System;
 using System.Drawing;
+using System.IO;
 using System.Windows.Forms;
 using WindowImagePlayer;
+using WindowsDraw.Test;
 
 static class Program
 {
+
+	static DirectoryInfo _tempDir => Directory.CreateDirectory(Path.Combine(Path.GetTempPath(),"BadApple"));
+
 	[STAThread]
 	static void Main()
 	{
+		//解压图片文件到目录
+		Unzip();
 		Application.EnableVisualStyles();
 		Application.SetCompatibleTextRenderingDefault(false);
 
 		// --- 直接在这里调用 API ---
 
-		string myImages = @"C:\Users\shimikoi\AppData\Local\Temp\Badapple"; // 你的图片目录
+		string myImages = _tempDir.FullName; // 你的图片目录
 
 		var player = new WindowImagePlayerHost(myImages)
 		{
@@ -27,5 +34,15 @@ static class Program
 		};
 
 		Application.Run(player);
+	}
+
+	static void Unzip()
+	{
+		if (_tempDir.Exists)
+		{
+			Directory.Delete(_tempDir.FullName,true);
+		}
+		File.WriteAllBytes(Path.Combine(_tempDir.FullName,"content.zip"),Resource1.badapple_output_frames);
+		System.IO.Compression.ZipFile.ExtractToDirectory(Path.Combine(_tempDir.FullName,"content.zip"), _tempDir.FullName);
 	}
 }
