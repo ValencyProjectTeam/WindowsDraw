@@ -29,7 +29,8 @@ static class Program
 			WindowColor = Color.White,   // 改成黑色窗口
 			WindowTitle = "Apple",        // 每个窗口的标题
 			AutoCloseWhenFinished = true,   // 播放结束后自动关闭窗口
-			AutoStart = false
+			AutoStart = false,
+			Text = "Good Apple"
 		};
 
 		Application.Run(player);
@@ -50,7 +51,7 @@ static class Program
 		using (var dialog = new FolderBrowserDialog())
 		{
 			dialog.SelectedPath = defaultPath;
-			dialog.Description = "*请选择动画图片的目录*";
+			dialog.Description = "*请选择动画图片的目录*\n如果你没有想播放的东西请直接按确定自动播放Bad Apple";
 			dialog.ShowNewFolderButton = false;
 			if (dialog.ShowDialog() == DialogResult.OK)
 			{

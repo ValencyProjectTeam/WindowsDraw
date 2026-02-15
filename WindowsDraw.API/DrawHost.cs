@@ -98,8 +98,8 @@ namespace WindowImagePlayer
 
 			// 初始化宿主 UI
 			this.Text = "窗口图像播放器 - 控制台";
-			this.Width = 300;
-			this.Height = 150;
+			this.Width = 500;
+			this.Height = 250;
 			this.FormBorderStyle = FormBorderStyle.FixedSingle;
 			this.StartPosition = FormStartPosition.CenterScreen;
 
