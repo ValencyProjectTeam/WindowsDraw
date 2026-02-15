@@ -54,7 +54,7 @@ static void Main()
 ## 3. API 详细规格
 
 ### 构造函数：`WindowImagePlayerHost(string targetFolderPath)`
-*   **参数**: `targetFolderPath` (string) - 包含图像文件（.jpg, .png, .bmp）的文件夹路径。
+*   **参数**: `targetFolderPath` (string) - 包含图像文件（.jpg, .png, .bmp）的文件夹路径，这个文件夹内应该包含多张黑白图片以实现连续动画。
 
 ### 公开配置属性
 
