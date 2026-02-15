@@ -18,19 +18,18 @@ static class Program
 		Application.EnableVisualStyles();
 		Application.SetCompatibleTextRenderingDefault(false);
 
-		// --- 直接在这里调用 API ---
-
-		string myImages = _tempDir.FullName; // 你的图片目录
+		// 你的图片目录
+		string myImages = SeletectDirectory(_tempDir.FullName);
 
 		var player = new WindowImagePlayerHost(myImages)
 		{
 			StepSize = 30,               // 增大步长，性能更好
 			FrameInterval = 200,          // 帧率更快
 			BrightnessThreshold = 0.4f,  // 判定阈值更灵敏
-			WindowColor = Color.Black,   // 改成黑色窗口
+			WindowColor = Color.White,   // 改成黑色窗口
 			WindowTitle = "Apple",        // 每个窗口的标题
 			AutoCloseWhenFinished = true,   // 播放结束后自动关闭窗口
-			AutoStart = true
+			AutoStart = false
 		};
 
 		Application.Run(player);
@@ -44,5 +43,24 @@ static class Program
 		}
 		File.WriteAllBytes(Path.Combine(_tempDir.FullName,"content.zip"),Resource1.badapple_output_frames);
 		System.IO.Compression.ZipFile.ExtractToDirectory(Path.Combine(_tempDir.FullName,"content.zip"), _tempDir.FullName);
+	}
+
+	static string SeletectDirectory(string defaultPath)
+	{
+		using (var dialog = new FolderBrowserDialog())
+		{
+			dialog.SelectedPath = defaultPath;
+			dialog.Description = "*请选择动画图片的目录*";
+			dialog.ShowNewFolderButton = false;
+			if (dialog.ShowDialog() == DialogResult.OK)
+			{
+				return dialog.SelectedPath;
+			}
+			else
+			{
+				MessageBox.Show("你没有选择任何目录。");
+				return defaultPath; // 返回默认路径
+			}
+		}
 	}
 }
