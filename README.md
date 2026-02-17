@@ -1,4 +1,4 @@
-# WindowImagePlayer API 文档
+# WindowDraw API 文档
 
 **GIF 演示（请等待加载）**：
 
