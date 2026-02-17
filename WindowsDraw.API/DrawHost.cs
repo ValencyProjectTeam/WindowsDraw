@@ -2,7 +2,7 @@
  MIT License
  Copyright (c) 2026 ValencyProject Team - Higashitani Yume
 
- 你可以自由地使用、复制、修改、合并、发布、分发、再授权和/或销售本软件的副本，但是你必须
+ 你可以自由地使用、复制、修改、合并、发布、分发、再授权和/或销售本软件的副本，但是你必须标注来源与作者。
  */
 
 using System;
@@ -76,7 +76,17 @@ namespace WindowImagePlayer
 		/// </summary>
 		public int CurrentIndex => _currentIndex;
 
-		// ================= 私有变量 =================
+
+		/// <summary>
+		/// 当一帧开始准备渲染（计算前）时触发。
+		/// </summary>
+		public event EventHandler FrameRendering;
+
+		/// <summary>
+		/// 当一帧渲染操作（窗口位置更新）完成时触发。
+		/// </summary>
+		public event EventHandler FrameRendered;
+
 
 		private List<Form> _windowPool = new List<Form>();
 		private string[] _imageFiles;
@@ -89,25 +99,20 @@ namespace WindowImagePlayer
 		/// <summary>
 		/// 初始化播放器宿主窗口。
 		/// </summary>
-		/// <param name="targetFolderPath">包含图像序列（jpg/png/bmp）的文件夹路径</param>
+		/// <param name="targetFolderPath">包含图像序列的文件夹路径</param>
 		public WindowImagePlayerHost(string targetFolderPath)
 		{
 			_targetFolderPath = targetFolderPath;
-
 			this.Icon = SystemIcons.Information;
-
-			// 初始化宿主 UI
 			this.Text = "窗口图像播放器 - 控制台";
 			this.Width = 500;
 			this.Height = 250;
 			this.FormBorderStyle = FormBorderStyle.FixedSingle;
 			this.StartPosition = FormStartPosition.CenterScreen;
 
-			// 初始化播放计时器
 			_playTimer = new Timer { Interval = 200 };
 			_playTimer.Tick += OnTimerTick;
 
-			// 创建开始按钮（控制台模式可见）
 			_btnStart = new Button
 			{
 				Text = "开始播放",
@@ -127,10 +132,8 @@ namespace WindowImagePlayer
 		protected override void OnLoad(EventArgs e)
 		{
 			base.OnLoad(e);
-
 			if (AutoStart)
 			{
-				// 隐藏控制台界面并直接开始
 				this.Opacity = 0;
 				this.ShowInTaskbar = false;
 				StartPlayback();
@@ -177,6 +180,10 @@ namespace WindowImagePlayer
 		private async void OnTimerTick(object sender, EventArgs e)
 		{
 			if (_isProcessing || _imageFiles == null || _imageFiles.Length == 0) return;
+
+			// --- 触发开始渲染事件 ---
+			FrameRendering?.Invoke(this, EventArgs.Empty);
+
 			_isProcessing = true;
 
 			// --- 播放完成逻辑 ---
@@ -187,7 +194,7 @@ namespace WindowImagePlayer
 
 				if (AutoCloseWhenFinished)
 				{
-					this.Close(); // 自动关闭宿主，触发资源清理
+					this.Close();
 				}
 				return;
 			}
@@ -199,6 +206,9 @@ namespace WindowImagePlayer
 
 			// 2. 将计算结果应用到窗口池（增量更新或重刷）
 			ApplyIncrementalRender(targetRects);
+
+			// --- 触发渲染结束事件 ---
+			FrameRendered?.Invoke(this, EventArgs.Empty);
 
 			_currentIndex++;
 			_isProcessing = false;
