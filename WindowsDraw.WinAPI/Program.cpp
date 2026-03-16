@@ -124,7 +124,7 @@ int main() {
         std::cout << "无法注册热键 Ctrl+Shift+Q" << std::endl;
     }
 
-    std::wstring folderPath = L"C:\\PublicFiles\\Downloads\\badapple_output_frames";
+    std::wstring folderPath = L"./badapple_output_frames";
     LoadImageFiles(folderPath);
 
     std::wcout << L"正在播放。按下 Ctrl + Shift + Q 或 Esc 键退出程序。" << std::endl;

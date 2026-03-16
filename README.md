@@ -1,4 +1,4 @@
-# WindowDraw API 文档
+# WindowsDraw 项目文档
 
 **GIF 演示（请等待加载）**：
 
@@ -11,37 +11,39 @@
 
 ## 1. 解决方案项目说明
 
-本仓库包含两个主要项目，以便于开发者集成和测试：
+本解决方案包含三个主要项目，涵盖了核心逻辑、演示示例以及底层实现：
 
-| 项目名称 | 类型 | 说明 |
-| :--- | :--- | :--- |
-| **`WindowsDraw.API`** | 类库 (Library) | **核心项目**。包含播放器核心逻辑和 `WindowImagePlayerHost` 类。集成开发时请引用此项目。 |
-| **`WindowsDraw.Test`** | 启动项 (App) | **演示项目**。展示了如何调用 API 进行播放，可作为参考 Demo 直接运行。 |
-
-> **调用建议**：在你的生产项目中，请添加对 `WindowsDraw.API` 项目的引用，并确保引入 `using WindowImagePlayer;` 命名空间。
+| 项目名称 | 语言 | 类型 | 说明 |
+| :--- | :--- | :--- | :--- |
+| **`WindowsDraw.API`** | C# | 类库 (.NET 4.7.2) | **核心组件**。包含 `WindowImagePlayerHost` 类，负责图像采样、窗口池管理及增量渲染逻辑。 |
+| **`WindowsDraw.Test`** | C# | 桌面应用 | **集成演示**。内置了 Bad Apple 视频帧资源（ZIP），启动时自动解压并调用 API 进行播放。 |
+| **`WindowsDraw.WinAPI`**| C++ | 控制台应用 | **高性能实现**。基于 Win32 API 和 C++20 编写的底层版本，适合追求极致响应速度的场景。 |
 
 ---
 
-## 2. 快速入门
+## 2. 快速入门 (C#)
 
-在你的项目（建议为 Windows 窗体应用或控制台应用）中调用：
+在你的项目中引用 `WindowsDraw.API.dll`，并确保命名空间正确：
 
 ```csharp
-using WindowImagePlayer; // 引用 API 项目命名空间
+using System.Drawing;
+using System.Windows.Forms;
+using WindowImagePlayer; // 核心命名空间
 
 static void Main()
 {
     Application.EnableVisualStyles();
-    Application.SetCompatibleTextRenderingDefault(false);
-
-    // 实例化 API 项目中的宿主类
-    var player = new WindowImagePlayerHost(@"C:\PathToImages")
+    
+    // 初始化宿主，传入图片序列文件夹路径
+    var player = new WindowImagePlayerHost(@"C:\Images\Frames")
     {
-        AutoStart = true,               // 启动后立即播放
-        AutoCloseWhenFinished = true,   // 播放完自动退出
-        StepSize = 30,                  // 采样步长
-        FrameInterval = 50,             // 50ms 一帧
-        WindowColor = Color.White       // 窗口颜色
+        StepSize = 30,              // 采样步长（像素），控制窗口密度
+        FrameInterval = 40,         // 帧间隔（ms），40ms 约等于 25fps
+        BrightnessThreshold = 0.4f, // 亮度阈值，低于此值将生成窗口
+        WindowColor = Color.White,  // 窗口填充颜色
+        WindowTitle = "Bad Apple",  // 窗口标题栏文本
+        AutoStart = false,          // 是否显示控制台界面
+        AutoCloseWhenFinished = true
     };
 
     Application.Run(player);
@@ -50,41 +52,47 @@ static void Main()
 
 ---
 
-## 3. API 详细规格
+## 3. 核心 API 规格 (`WindowImagePlayerHost`)
 
-### 构造函数：`WindowImagePlayerHost(string targetFolderPath)`
-*   **参数**: `targetFolderPath` (string) - 包含图像文件（.jpg, .png, .bmp）的文件夹路径，这个文件夹内应该包含多张黑白图片以实现连续动画。
-
-### 公开配置属性
+### 属性 (Properties)
 
 | 属性名 | 类型 | 默认值 | 说明 |
 | :--- | :--- | :--- | :--- |
-| **`AutoStart`** | `bool` | `false` | 为 `true` 时，不显示控制面板，运行即播放（静默模式）。 |
-| **`AutoCloseWhenFinished`** | `bool` | `true` | 为 `true` 时，播放完最后一帧会自动结束进程。 |
-| **`StepSize`** | `int` | `25` | 采样步长（像素）。值越小画面越细但窗口越多，建议 20-50。 |
-| **`BrightnessThreshold`** | `float` | `0.4f` | 亮度阈值（0.0-1.0）。低于此值的颜色将被绘制为窗口。 |
-| **`FrameInterval`** | `int` | `200` | 帧率控制（毫秒）。 |
-| **`ResetRatio`** | `double` | `1.9` | 窗口池重刷比例。用于处理画面剧烈闪烁时的性能平衡。 |
-| **`WindowColor`** | `Color` | `White` | 生成的像素窗口背景色。 |
-| **`WindowTitle`** | `string` | `" "` | 像素窗口的标题栏文本。 |
+| **`StepSize`** | `int` | `25` | 采样像素步长。值越小图像越精细，但生成的窗口数量呈指数级增加。 |
+| **`BrightnessThreshold`** | `float` | `0.4f` | 判定阈值（0.0~1.0）。低于此亮度的区域被识别为“实体”。 |
+| **`ResetRatio`** | `double` | `1.9` | 窗口池重刷比例。当新一帧所需窗口超过当前池 `1.9` 倍时强制清空池。 |
+| **`FrameInterval`** | `int` | `200` | 播放速率（毫秒/帧）。 |
+| **`AutoStart`** | `bool` | `false` | 为 `true` 时进入“静默模式”直接播放，不显示控制窗体。 |
+| **`WindowColor`** | `Color` | `White` | 子窗口的背景颜色。 |
+
+### 事件 (Events)
+
+*   **`FrameRendering`**: 在每一帧开始计算渲染逻辑前触发。
+*   **`FrameRendered`**: 在当前帧的所有窗口位置/数量更新完成后触发。
 
 ---
 
-## 4. 运行模式说明
+## 4. 特色功能说明
 
-1.  **控制台交互模式 (`AutoStart = false`)**:
-    *   启动后显示一个 300x150 的控制窗口，点击“开始播放”按钮后触发渲染。
-    *   适合调试参数或手动触发效果。
+1.  **窗口池增量更新 (Incremental Rendering)**:
+    API 不会每一帧都销毁重建窗口，而是通过 `ApplyIncrementalRender` 逻辑，优先复用已有的窗口对象并更新其 `Bounds` 属性，极大降低了系统句柄分配开销。
 
-2.  **静默执行模式 (`AutoStart = true`)**:
-    *   控制窗体完全透明且不显示在任务栏，用户直接看到桌面窗口跳动效果。
-    *   适合配合脚本或自动化演示。
+2.  **内置资源自解压 (WindowsDraw.Test)**:
+    测试项目演示了如何从资源文件 (`Resource1`) 中提取 `badapple_output_frames.zip` 到临时目录并自动加载，实现了“开箱即用”的动画演示。
+
+3.  **高性能采样**:
+    计算逻辑在 `CalculateFrameRectList` 中通过 `Task.Run` 异步执行，并在低分辨率缩略图上进行区域合并算法（`FindLargestRect`），有效减少了碎小窗口的数量。
 
 ---
 
-## 5. 重要注意事项
+## 5. 开发建议与注意事项
 
-*   **性能消耗**: `StepSize` 设置得过小（如 < 15）会导致系统瞬间产生数千个窗口，可能造成桌面窗口管理器 (DWM) 卡顿。
-*   **文件依赖**: 图像文件必须按顺序命名（如 `001.jpg`, `002.jpg`），API 内部会按名称进行升序排列。
-*   **进程残留警告**: **如果使用静默模式 (`AutoStart = true`)，请务必将 `AutoCloseWhenFinished` 设为 `true`**。否则在播放结束后，由于主窗口隐藏，用户很难手动关闭进程，可能导致内存残留。
-*   **资源清理**: 类内部已封装 `OnFormClosing` 逻辑，关闭主程序时会强制销毁所有创建的子窗口。
+*   **性能警告**: 如果 `StepSize` 设置低于 `15`，在复杂画面下可能会产生超过 2000 个窗口，这会导致系统 DWM (桌面窗口管理器) 负载过高，产生明显的画面撕裂或卡顿。
+*   **DPI 感知**: `WindowsDraw.Test` 已内置 `app.manifest` 开启 DPI 感知，确保在高分屏下窗口位置不会偏移。
+*   **图像预处理**: 为了获得最佳效果，建议输入的图片序列为高对比度的黑白图像。
+*   **环境要求**: 
+    *   .NET Framework 4.7.2+
+    *   C++ 实现需 Visual Studio 2022 (v143 工具链) 并支持 C++20 标准。
+
+---
+**License**: MIT License | Copyright (c) 2026 ValencyProject Team - Higashitani Yume
