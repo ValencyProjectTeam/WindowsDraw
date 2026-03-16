@@ -26,7 +26,6 @@ bool g_keepRunning = true; // 运行控制标志
 // 消息处理函数：用于检查是否按下了退出快捷键
 void ProcessMessages() {
     MSG msg;
-    // 使用 PeekMessage 而不是 GetMessage，因为它不会阻塞播放循环
     while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
         if (msg.message == WM_HOTKEY && msg.wParam == EXIT_HOTKEY_ID) {
             std::wcout << L"检测到退出快捷键，正在关闭..." << std::endl;
@@ -35,7 +34,6 @@ void ProcessMessages() {
         TranslateMessage(&msg);
         DispatchMessage(&msg);
     }
-    // 额外兜底：检测 Esc 键是否按下
     if (GetAsyncKeyState(VK_ESCAPE) & 0x8000) {
         g_keepRunning = false;
     }
@@ -122,8 +120,6 @@ int main() {
     HINSTANCE hInst = GetModuleHandle(NULL);
     RegisterPixelClass(hInst);
 
-    // 1. 注册全局快捷键: Ctrl + Shift + Q
-    // MOD_CONTROL (0x0002) | MOD_SHIFT (0x0004)
     if (!RegisterHotKey(NULL, EXIT_HOTKEY_ID, MOD_CONTROL | MOD_SHIFT, 'Q')) {
         std::cout << "无法注册热键 Ctrl+Shift+Q" << std::endl;
     }
@@ -134,15 +130,21 @@ int main() {
     std::wcout << L"正在播放。按下 Ctrl + Shift + Q 或 Esc 键退出程序。" << std::endl;
 
     for (const auto& file : g_imageFiles) {
-        // 每帧开始前处理系统消息
         ProcessMessages();
         if (!g_keepRunning) break;
+
+        // 【新增修复代码】：检查并移除已被用户手动关闭的无效窗口句柄
+        g_windowPool.erase(
+            std::remove_if(g_windowPool.begin(), g_windowPool.end(),
+                [](HWND hwnd) { return !IsWindow(hwnd); }),
+            g_windowPool.end()
+        );
 
         std::vector<RECT> targetRects = CalculateRects(file);
 
         while (g_windowPool.size() < targetRects.size()) {
             HWND hwnd = CreateWindowEx(
-                WS_EX_TOPMOST /*| WS_EX_TOOLWINDOW*/ | WS_EX_NOACTIVATE,
+                WS_EX_TOPMOST | WS_EX_NOACTIVATE,
                 WINDOW_CLASS_NAME, L"BadApple",
                 WS_OVERLAPPEDWINDOW | WS_VISIBLE,
                 -2000, -2000, 0, 0, NULL, NULL, hInst, NULL
@@ -166,9 +168,10 @@ int main() {
         Sleep(FRAME_INTERVAL);
     }
 
-    // 清理
     UnregisterHotKey(NULL, EXIT_HOTKEY_ID);
-    for (HWND hwnd : g_windowPool) DestroyWindow(hwnd);
+    for (HWND hwnd : g_windowPool) {
+        if (IsWindow(hwnd)) DestroyWindow(hwnd);
+    }
     GdiplusShutdown(gdipToken);
     return 0;
 }
